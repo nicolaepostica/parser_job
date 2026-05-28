@@ -63,10 +63,57 @@ def build_session(config: dict) -> requests.Session:
     return session
 
 
+def fetch_projects(session: requests.Session) -> list[dict]:
+    """Paginate /projects and return the combined list of project dicts.
+
+    Stops when current_page >= last_page (Inertia paginator metadata), or
+    when a page returns an empty data array as a fallback.
+    """
+    projects: list[dict] = []
+    page = 1
+    while True:
+        url = f"{BASE_URL}{PROJECTS_PATH}"
+        response = session.get(url, params={"page": page, "limit": PAGE_LIMIT})
+
+        if response.status_code in (401, 403):
+            print("Auth expired — refresh cookies in .env", file=sys.stderr)
+            sys.exit(1)
+        response.raise_for_status()
+
+        content_type = response.headers.get("Content-Type", "")
+        if "application/json" not in content_type:
+            print("Auth expired — refresh cookies in .env", file=sys.stderr)
+            sys.exit(1)
+
+        payload = response.json()
+        try:
+            paginator = payload["props"]["projects"]
+            page_data = paginator["data"]
+        except (KeyError, TypeError):
+            print("Unexpected response shape. First 500 chars:", file=sys.stderr)
+            print(response.text[:500], file=sys.stderr)
+            sys.exit(1)
+
+        projects.extend(page_data)
+        last_page = paginator.get("last_page")
+        print(f"Page {page}: +{len(page_data)} (total {len(projects)})")
+
+        if not page_data:
+            break
+        if last_page is not None and page >= last_page:
+            break
+
+        page += 1
+        time.sleep(SLEEP_BETWEEN_PAGES_S)
+
+    return projects
+
+
 def main() -> None:
     config = load_config()
     session = build_session(config)
-    print(f"Session ready — {len(session.cookies)} cookies, {len(session.headers)} headers")
+    projects = fetch_projects(session)
+    print(f"Fetched {len(projects)} projects total")
 
 
 if __name__ == "__main__":
