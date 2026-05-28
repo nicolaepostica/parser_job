@@ -109,11 +109,25 @@ def fetch_projects(session: requests.Session) -> list[dict]:
     return projects
 
 
+def save(projects: list[dict]) -> Path:
+    """Write projects to data/projects_<timestamp>.json. Returns the path."""
+    data_dir = Path("data")
+    data_dir.mkdir(exist_ok=True)
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    out_path = data_dir / f"projects_{timestamp}.json"
+    with out_path.open("w", encoding="utf-8") as f:
+        json.dump(projects, f, indent=2, ensure_ascii=False)
+    return out_path
+
+
 def main() -> None:
     config = load_config()
     session = build_session(config)
     projects = fetch_projects(session)
-    print(f"Fetched {len(projects)} projects total")
+    out_path = save(projects)
+    if not projects:
+        print("Warning: 0 projects returned", file=sys.stderr)
+    print(f"Saved {len(projects)} projects to {out_path}")
 
 
 if __name__ == "__main__":
