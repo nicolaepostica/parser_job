@@ -40,9 +40,33 @@ def load_config() -> dict:
     }
 
 
+def build_session(config: dict) -> requests.Session:
+    """Build a requests.Session with cookies and Inertia headers."""
+    session = requests.Session()
+    for name, value in config["cookies"].items():
+        session.cookies.set(name, value, domain="app.techprojectsnow.com")
+    session.headers.update({
+        "Accept": "text/html, application/xhtml+xml",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Content-Type": "application/json",
+        "Referer": f"{BASE_URL}{PROJECTS_PATH}",
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/148.0.0.0 Safari/537.36"
+        ),
+        "X-Inertia": "true",
+        "X-Inertia-Version": INERTIA_VERSION,
+        "X-Requested-With": "XMLHttpRequest",
+        "X-XSRF-TOKEN": config["xsrf_token"],
+    })
+    return session
+
+
 def main() -> None:
     config = load_config()
-    print(f"Loaded {len(config['cookies'])} cookies from .env")
+    session = build_session(config)
+    print(f"Session ready — {len(session.cookies)} cookies, {len(session.headers)} headers")
 
 
 if __name__ == "__main__":
