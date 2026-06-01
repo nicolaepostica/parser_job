@@ -17,7 +17,7 @@ import os
 BASE_URL = "https://app.techprojectsnow.com"
 PROJECTS_PATH = "/projects"
 PAGE_LIMIT = 10
-SLEEP_BETWEEN_PAGES_S = 0.5
+SLEEP_BETWEEN_PAGES_S = 1.5
 INERTIA_VERSION = "7c010bf7dddd0a47041d6d8e9fc03b9e"
 REMEMBER_COOKIE_NAME = "remember_web_59ba36addc2b2f9401580f014c7f58ea4e30989d"
 
