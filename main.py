@@ -115,8 +115,12 @@ def save(projects: list[dict]) -> Path:
     data_dir.mkdir(exist_ok=True)
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     out_path = data_dir / f"projects_{timestamp}.json"
-    with out_path.open("w", encoding="utf-8") as f:
-        json.dump(projects, f, indent=2, ensure_ascii=False)
+    text = json.dumps(projects, indent=2, ensure_ascii=False)
+    # U+2028/U+2029 are valid in JSON but are treated as line terminators in
+    # JS source and trip editors' "unusual line terminator" warnings. Escape
+    # them so the file is clean; parsing the JSON yields the same strings.
+    text = text.replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
+    out_path.write_text(text, encoding="utf-8")
     return out_path
 
 
